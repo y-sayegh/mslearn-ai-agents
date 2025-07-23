@@ -1,0 +1,22 @@
+{
+  "name": "submit_support_ticket",
+  "description": "No description",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "email_address": {
+        "type": "string",
+        "description": "No description"
+      },
+      "description": {
+        "type": "string",
+        "description": "No description"
+      }
+    },
+    "required": [
+      "email_address",
+      "description"
+    ]
+  },
+  "strict": false
+}

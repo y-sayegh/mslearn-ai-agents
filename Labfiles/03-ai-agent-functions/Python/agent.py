@@ -4,7 +4,7 @@ from typing import Any
 from pathlib import Path
 from azure.identity import DefaultAzureCredential
 from azure.ai.agents import AgentsClient
-from azure.ai.agents.models import FunctionTool, ToolSet, ListSortOrder, MessageRole, FilePurpose,CodeInterpreterTool
+from azure.ai.agents.models import FunctionTool, ToolSet, ListSortOrder, MessageRole, FilePurpose,CodeInterpreterTool,FileSearchTool
 from user_functions import user_functions
 
 # Add references
@@ -31,27 +31,15 @@ def main():
 
     # Define an agent that can use the custom functions
     with agent_client:
-        vector_store = agent_client.vector_stores.create_and_poll(data_sources=[], name="vector-store")
-        vector_store.add_file(
-            file_path="./data/azure-ai-agents.pdf ", 
-            purpose=FilePurpose.QUERY,
-        )
+        
+
+        # Create file search tool with resources followed by creating agent
         functions = FunctionTool(user_functions)
         toolset = ToolSet()
         toolset.add(functions)
+        #agent_client.update_agent(agent_id="asst_k8ruq73US00cHBI3BHv7ju1c",toolset=toolset)
+        agent = agent_client.get_agent("asst_k8ruq73US00cHBI3BHv7ju1c")
         agent_client.enable_auto_function_calls(toolset)
-
-        agent = agent_client.create_agent(
-            model=model_deployment,
-            name="support-agent",
-            instructions="""You are a technical support agent.
-                            When a user has a technical issue, you get their email address and a description of the issue.
-                            Then search the knowldgebase to suggest solutions and if the solution found is rejected by the user then use the email address and description to  submit a support ticket using the function available to you.
-                            If a file is saved, tell the user the file name.
-                        """,
-            toolset=toolset
-        )
-
         thread = agent_client.threads.create()
         print(f"You're chatting with: {agent.name} ({agent.id})")
 
@@ -93,9 +81,7 @@ def main():
             if message.text_messages:
                 last_msg = message.text_messages[-1]
                 print(f"{message.role}: {last_msg.text.value}\n")
-        # Clean up
-        agent_client.delete_agent(agent.id)
-        print("Deleted agent")  
+        
     
 
 

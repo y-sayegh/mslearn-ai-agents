@@ -1,0 +1,4 @@
+Support ticket: 9e0ca4
+Submitted by: youssef.sayegh@qwe.com
+Description:
+User is unable to connect to their printer. Troubleshooting steps have been provided, but the issue persists.

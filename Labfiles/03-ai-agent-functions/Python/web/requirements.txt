@@ -1,0 +1,6 @@
+Flask==2.3.3
+python-dotenv==1.0.0
+azure-identity==1.15.0
+azure-ai-agents==1.0.0b1
+pathlib
+uuid
