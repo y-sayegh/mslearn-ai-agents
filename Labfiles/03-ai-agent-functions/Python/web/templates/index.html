@@ -144,6 +144,19 @@
             padding: 10px;
         }
         
+        .status-message {
+            background: #e8f4f8;
+            color: #0066cc;
+            padding: 10px 15px;
+            border-radius: 15px 15px 15px 5px;
+            float: left;
+            max-width: 85%;
+            margin-right: 15%;
+            border-left: 4px solid #0066cc;
+            font-style: italic;
+            margin-bottom: 5px;
+        }
+        
         .shortcut-hint {
             font-size: 12px;
             color: #999;
@@ -181,6 +194,38 @@
                 }
             });
 
+            // Status messages to cycle through
+            const statusMessages = [
+                "🤖 Agent is thinking...",
+                "📋 Analyzing your request...",
+                "🔍 Searching knowledge base...",
+                "⚙️ Processing information...",
+                "📝 Preparing response..."
+            ];
+            
+            let statusInterval;
+            let currentStatusIndex = 0;
+            
+            function updateStatusMessage(statusElement) {
+                statusElement.html(statusMessages[currentStatusIndex]);
+                currentStatusIndex = (currentStatusIndex + 1) % statusMessages.length;
+            }
+            
+            function startStatusUpdates(statusElement) {
+                currentStatusIndex = 0;
+                updateStatusMessage(statusElement);
+                statusInterval = setInterval(() => {
+                    updateStatusMessage(statusElement);
+                }, 2000); // Update every 2 seconds
+            }
+            
+            function stopStatusUpdates() {
+                if (statusInterval) {
+                    clearInterval(statusInterval);
+                    statusInterval = null;
+                }
+            }
+
             // Function to send messages
             function sendMessage() {
                 const userMessage = $('#chat-input').val();
@@ -189,27 +234,58 @@
                     return;
                 }
 
+                // Add user message immediately
+                $('#chat-box').append(`<div class="message"><div class="user-message">${userMessage.replace(/\n/g, '<br>')}</div></div>`);
+                
+                // Add status message
+                const statusMessageDiv = $('<div class="message"><div class="status-message" id="current-status">🤖 Agent is thinking...</div></div>');
+                $('#chat-box').append(statusMessageDiv);
+                $('#chat-box')[0].scrollTop = $('#chat-box')[0].scrollHeight;
+                
+                // Start cycling through status messages
+                const statusElement = $('#current-status');
+                startStatusUpdates(statusElement);
+                
+                // Clear input immediately for better UX
+                $('#chat-input').val('');
+                
+                // Disable send button to prevent multiple requests
+                $('#send-button').prop('disabled', true).text('Sending...');
+
                 $.ajax({
                     url: '/send_message',
                     type: 'POST',
                     contentType: 'application/json',
                     data: JSON.stringify({ message: userMessage }),
                     success: function(response) {
+                        // Stop status updates
+                        stopStatusUpdates();
+                        
+                        // Remove status message
+                        statusMessageDiv.remove();
+                        
                         if (response.success) {
-                            // Add user message
-                            $('#chat-box').append(`<div class="message"><div class="user-message">${userMessage.replace(/\n/g, '<br>')}</div></div>`);
-                            
                             // Add agent response with markdown rendering
                             $('#chat-box').append(`<div class="message"><div class="agent-message markdown">${marked.parse(response.agent_response)}</div></div>`);
-                            
-                            $('#chat-input').val('');
                             $('#chat-box')[0].scrollTop = $('#chat-box')[0].scrollHeight;
                         } else {
                             alert('Error: ' + response.error);
                         }
+                        
+                        // Re-enable send button
+                        $('#send-button').prop('disabled', false).text('Send');
                     },
                     error: function() {
-                        alert("Failed to send message.");
+                        // Stop status updates
+                        stopStatusUpdates();
+                        
+                        // Remove status message and show error
+                        statusMessageDiv.remove();
+                        $('#chat-box').append(`<div class="message"><div class="agent-message" style="color: red;">❌ Failed to send message. Please try again.</div></div>`);
+                        $('#chat-box')[0].scrollTop = $('#chat-box')[0].scrollHeight;
+                        
+                        // Re-enable send button
+                        $('#send-button').prop('disabled', false).text('Send');
                     }
                 });
             }
